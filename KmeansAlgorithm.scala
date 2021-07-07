@@ -1,4 +1,6 @@
 import scala.collection.mutable.ArrayBuffer
+import org.scalameter._
+import scala.collection.parallel.CollectionConverters._
 
 
 
@@ -17,17 +19,17 @@ object KmeansAlgorithm
   //Global Variables
 
   // Points Quantity represents how many points we will have
-  val pointsQuantity = 10
+  val pointsQuantity = 2000
   // Point Range represents the range a point may be assigned
   // i.e if pointRange = 100, this means that a points coordinate x may only be a number from 0 to 100.
   val pointRange = 100
   // Point Dimension represents how many dimensions the points will have
-  val pointDimension = 5
+  val pointDimension = 100
   // K represents how many centroids we will have, therefore it also represents how many clusters there will be
-  val k = 3
+  val k = 5
   // Epsilon represents a parameter that decides when the difference between the old centroids and the new centroids
   // is insignificant enough to not warrant more iterations.
-  val epsilon = 2
+  val epsilon = 0.5
 
   def main(args: Array[String]): Unit =
   {
@@ -38,7 +40,21 @@ object KmeansAlgorithm
     // centroidsMatrix represents the matrix which will contain all the centroids
     var centroidsMatrix = chooseCentroids(pointsMatrix)
 
+
+    val time = config(
+      Key.exec.benchRuns -> 20,
+    ) withWarmer{
+      new Warmer.Default
+    } withMeasurer {
+    new Measurer.IgnoringGC
+    } measure {
     secuentialKmeans(pointsMatrix, centroidsMatrix)
+    }
+    println("Time to completion = " + time)
+//    val t1 = System.nanoTime
+//    secuentialKmeans(pointsMatrix, centroidsMatrix)
+//    val duration1 = (System.nanoTime - t1) / 1e9d
+//    println("Duration in nanoseconds of sequential execution: " + duration1)
   }
 
   def secuentialKmeans(pointsMatrix: Array[Array[Double]], centroidsMatrix: Array[Array[Double]]): Unit =
@@ -56,7 +72,7 @@ object KmeansAlgorithm
     // Here we show our matrix full of points
     println("Matrix of points")
     //printMatrix represents a function that will eliminate the need to re write code in order to print Array[Array[Double]] type variables
-    printMatrix(pointsMatrix)
+    //printMatrix(pointsMatrix)
     println
     // centroidsMatrix represents the matrix which will contain all the centroids, it will be visualized just as the pointsMatrix
     var centroidMatrix = centroidsMatrix
@@ -67,13 +83,13 @@ object KmeansAlgorithm
     // Iterations represents the quantity of times we found new centroids before the optimal ones were found
     var iterations = 1
 
-//    while(!done)
-//      {
+    while(!done)
+      {
         // Clusters represents the map which will contain:
         // The position of each centroid within the centroids matrix, along with a matrix filled with the points that belong with that centroid inside each cluster
         var clusters = pointsMatrix.groupBy(point => nearestCentroidClassification(point, centroidMatrix))
-        println("Clusters")
-        printMapClassification(clusters)
+        //println("Clusters")
+        //printMapClassification(clusters)
         println
         // quantityAndDistance represents and matrix which will contain:
         // Tuples which indicate the amount of points and their distance to each centroid within the clusters
@@ -102,7 +118,7 @@ object KmeansAlgorithm
         }
         previousSSE = sse
         iterations += 1
-//      }
+      }
   }
 
   //This function prints matrices of points to save programing redundancy
@@ -342,7 +358,6 @@ object KmeansAlgorithm
   {
     var newCentroids = Array.ofDim[Double](k, pointDimension)
     var acumCoord = Array.ofDim[Double](k, pointDimension)
-    var coordAcum = 0.0
     var rowPos = 0
     var colPos = 0
     for ((centroidRowPos, pointsMatrix) <- clusters)
@@ -378,33 +393,3 @@ object KmeansAlgorithm
   }
 }
 
-
-  //      println("centroid row pos = " + centroidRowPos)
-  //      println("-----------------------")
-  //      println("MATRIZ DE PUNTOS")
-  //      printMatrix(pointsMatrix)
-  //      println("-----------------------")
-
-
-  //      for(rowPos <- 0 to pointsMatrix.length - 1)
-  //        {
-  //          for(colPos <- 0 to pointDimension - 1)
-  //            {
-  //              coordAcum += pointsMatrix(rowPos)(colPos)
-  //              acumCoord(centroidRowPos)(colPos) += coordAcum
-  //            }
-  //        }
-
-
-
-
-  //colPos += 1
-  //      println("-----------------------")
-  //      println("COORDENADAS ACUMULADAS")
-  //      printMatrix(acumCoord)
-  //      println("-----------------------")
-
-//    println("-----------------------")
-//    println("COORDENADAS ACUMULADAS")
-//    printMatrix(acumCoord)
-//    println("-----------------------")
